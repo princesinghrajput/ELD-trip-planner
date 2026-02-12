@@ -2,9 +2,17 @@ import { useState } from 'react';
 import { Truck, Map as MapIcon, FileText, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
+import { TripForm } from '@/components/TripForm';
 
 function App() {
   const [activeTab, setActiveTab] = useState('plan');
+  const [tripResult, setTripResult] = useState(null);
+
+  const handleTripPlanned = (data) => {
+    setTripResult(data);
+    // Auto-switch to map view if on mobile, or just highlight results
+    console.log("Trip planned:", data);
+  };
 
   return (
     <div className="flex h-screen w-full flex-col bg-slate-950 text-slate-50 md:flex-row overflow-hidden">
@@ -61,15 +69,31 @@ function App() {
                   </p>
                 </header>
 
-                {/* Form Placeholder */}
-                <div className="rounded-xl border border-dashed border-slate-800 bg-slate-900/30 p-8 text-center text-slate-500">
-                  Form Component Here
+                {/* Form Section */}
+                <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-6 shadow-sm">
+                  <TripForm onSuccess={handleTripPlanned} />
                 </div>
 
                 {/* Summary Placeholder */}
-                <div className="mt-8 rounded-xl border border-dashed border-slate-800 bg-slate-900/30 p-8 text-center text-slate-500">
-                  Trip Summary Here
-                </div>
+                {tripResult ? (
+                  <div className="mt-8 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-6 space-y-4">
+                    <h3 className="text-lg font-medium text-emerald-400">Trip Calculated</h3>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <p className="text-slate-400">Total Distance</p>
+                        <p className="text-xl font-mono text-white">{tripResult.summary.total_driving_miles} mi</p>
+                      </div>
+                      <div>
+                        <p className="text-slate-400">Duty Cycle</p>
+                        <p className="text-xl font-mono text-white">{tripResult.summary.cycle_hours_at_end}h used</p>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mt-8 rounded-xl border border-dashed border-slate-800 bg-slate-900/30 p-8 text-center text-slate-500">
+                    Enter trip details to view summary
+                  </div>
+                )}
               </div>
 
               {/* Right Panel: Map */}
