@@ -1,0 +1,17 @@
+=== 700mi drive ===
+   1. D       480m  01-01T06:00 > 01-01T14:00  Driving: Chicago → Dallas
+   2. OFF      30m  01-01T14:00 > 01-01T14:30  30-minute break
+   3. D       180m  01-01T14:30 > 01-01T17:30  Driving: Chicago → Dallas
+   4. OFF     600m  01-01T17:30 > 01-02T03:30  10-hour off-duty rest
+   5. D       104m  01-02T03:30 > 01-02T05:14  Driving: Chicago → Dallas
+
+=== Full trip ===
+   1. D       327m  01-01T06:00 > 01-01T11:27  Driving: Chicago → Indy
+   2. ON       60m  01-01T11:27 > 01-01T12:27  Loading at pickup
+   3. D       191m  01-01T12:27 > 01-01T15:38  Driving: Indy → Columbus
+   4. ON       60m  01-01T15:38 > 01-01T16:38  Unloading at dropoff
+
+  Daily logs: 1 day(s)
+  2025-01-01: {'OFF': 13.37, 'SB': 0.0, 'D': 8.63, 'ON': 2.0}
+    - 11:27 Loading at pickup @ Indy
+    - 15:38 Unloading at dropoff @ Columbus
