@@ -69,7 +69,11 @@ function StopPopup({ stop, isDark }) {
                 {stop.duration_mins > 0 && (
                     <div>
                         <span className="block" style={{ color: isDark ? '#64748b' : '#94a3b8' }}>Duration</span>
-                        <span className="font-mono" style={{ color: isDark ? '#e2e8f0' : '#1e293b' }}>{stop.duration_mins}m</span>
+                        <span className="font-mono" style={{ color: isDark ? '#e2e8f0' : '#1e293b' }}>
+                            {stop.duration_mins >= 60
+                                ? `${Math.floor(stop.duration_mins / 60)}h ${stop.duration_mins % 60}m`
+                                : `${stop.duration_mins}m`}
+                        </span>
                     </div>
                 )}
             </div>
@@ -127,7 +131,24 @@ export function RouteMap({ tripResult }) {
                     />
                 ))}
 
-                {/* Markers */}
+                {/* Start marker (current location) */}
+                {legs.length > 0 && legs[0].geometry.length > 0 && (
+                    <Marker position={legs[0].geometry[0]} icon={ICONS.start}>
+                        <Popup>
+                            <div className="p-4 min-w-[200px]">
+                                <div className="flex items-center gap-2 mb-1">
+                                    <div className="flex h-7 w-7 items-center justify-center rounded-lg" style={{ background: 'rgba(16,185,129,0.15)' }}>
+                                        <Truck size={14} color="#10b981" />
+                                    </div>
+                                    <span className="text-sm font-semibold" style={{ color: isDark ? '#f8fafc' : '#0f172a' }}>Start</span>
+                                </div>
+                                <p className="text-xs" style={{ color: isDark ? '#94a3b8' : '#64748b' }}>{legs[0].from || 'Current Location'}</p>
+                            </div>
+                        </Popup>
+                    </Marker>
+                )}
+
+                {/* Stop markers */}
                 {stops.map((stop, i) => {
                     if (!stop.lat || !stop.lng) return null;
                     return (
@@ -136,6 +157,23 @@ export function RouteMap({ tripResult }) {
                         </Marker>
                     );
                 })}
+
+                {/* End marker (final dropoff) */}
+                {legs.length > 0 && legs[legs.length - 1].geometry.length > 0 && (
+                    <Marker position={legs[legs.length - 1].geometry[legs[legs.length - 1].geometry.length - 1]} icon={ICONS.dropoff}>
+                        <Popup>
+                            <div className="p-4 min-w-[200px]">
+                                <div className="flex items-center gap-2 mb-1">
+                                    <div className="flex h-7 w-7 items-center justify-center rounded-lg" style={{ background: 'rgba(245,158,11,0.15)' }}>
+                                        <Flag size={14} color="#f59e0b" />
+                                    </div>
+                                    <span className="text-sm font-semibold" style={{ color: isDark ? '#f8fafc' : '#0f172a' }}>Destination</span>
+                                </div>
+                                <p className="text-xs" style={{ color: isDark ? '#94a3b8' : '#64748b' }}>{legs[legs.length - 1].to || 'Dropoff Location'}</p>
+                            </div>
+                        </Popup>
+                    </Marker>
+                )}
             </MapContainer>
 
             {/* ── Stats Overlay ── */}
