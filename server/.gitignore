@@ -32,3 +32,5 @@ staticfiles/
 Thumbs.db
 
 *.agents/
+
+../docs

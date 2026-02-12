@@ -1,0 +1,25 @@
+# Python & Virtual Environment
+.venv/
+__pycache__/
+*.pyc
+.python-version
+
+# Environment Variables (Security Risk)
+.env
+
+# Tooling & IDEs
+.agents/
+.vscode/
+.idea/
+
+# Useless default file (from uv init)
+main.py
+
+# Reference Materials (Keep these local, don't push to GitHub)
+*.pdf
+*.docx
+*.doc
+WhatsApp Image*
+assessment.md
+story_requirement.md
+/docs
