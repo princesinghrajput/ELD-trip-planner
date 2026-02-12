@@ -4,12 +4,20 @@ import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TripForm } from '@/components/TripForm';
 import { RouteMap } from '@/components/RouteMap';
+import { LogSheet } from '@/components/LogSheet';
 import { useTheme } from '@/hooks/useTheme';
 
 function App() {
   const [activeTab, setActiveTab] = useState('plan');
   const [tripResult, setTripResult] = useState(null);
   const { isDark, toggle } = useTheme();
+
+  const [tripFormData, setTripFormData] = useState({
+    current: "",
+    pickup: "",
+    dropoff: "",
+    cycleUsed: "0",
+  });
 
   const handleTripPlanned = (data) => {
     setTripResult(data);
@@ -82,7 +90,11 @@ function App() {
                   "rounded-xl border p-5 shadow-sm transition-colors duration-300",
                   isDark ? "border-slate-800 bg-slate-900/50" : "border-slate-200 bg-white"
                 )}>
-                  <TripForm onSuccess={handleTripPlanned} />
+                  <TripForm
+                    formData={tripFormData}
+                    onFormChange={setTripFormData}
+                    onSuccess={handleTripPlanned}
+                  />
                 </div>
 
                 {/* ── Trip Summary ── */}
@@ -180,12 +192,7 @@ function App() {
               <header className="mb-6">
                 <h1 className={cn("text-2xl font-bold", isDark ? "text-white" : "text-slate-900")}>Driver Logs</h1>
               </header>
-              <div className={cn(
-                "flex-1 rounded-xl border border-dashed flex items-center justify-center",
-                isDark ? "border-slate-800 bg-slate-900/30 text-slate-500" : "border-slate-300 bg-white text-slate-400"
-              )}>
-                Log Sheet Canvas Here
-              </div>
+              <LogSheet tripResult={tripResult} isDark={isDark} />
             </motion.div>
           )}
         </AnimatePresence>

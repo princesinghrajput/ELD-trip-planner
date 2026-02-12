@@ -7,15 +7,19 @@ import { motion } from "framer-motion";
 import { useTheme } from "@/hooks/useTheme";
 import { cn } from "@/lib/utils";
 
-export function TripForm({ onSuccess }) {
+export function TripForm({ formData, onFormChange, onSuccess }) {
     const { planTrip, isLoading, error } = useTripPlanner();
     const { isDark } = useTheme();
-    const [form, setForm] = useState({
+    // Use props if provided, otherwise fallback to local (though App.jsx should provide it)
+    const [localForm, setLocalForm] = useState({
         current: "",
         pickup: "",
         dropoff: "",
         cycleUsed: "0",
     });
+
+    const form = formData || localForm;
+    const setForm = onFormChange || setLocalForm;
 
     const [errors, setErrors] = useState({});
 
