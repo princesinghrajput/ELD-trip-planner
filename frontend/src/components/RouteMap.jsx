@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import { MapContainer, TileLayer, Polyline, Marker, Popup, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Polyline, Marker, Popup, Tooltip, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Clock, Route, MapPin, Fuel as FuelIcon, Coffee, BedDouble, Flag, Truck, Package } from 'lucide-react';
@@ -134,17 +134,17 @@ export function RouteMap({ tripResult }) {
                 {/* Start marker (current location) */}
                 {legs.length > 0 && legs[0].geometry.length > 0 && (
                     <Marker position={legs[0].geometry[0]} icon={ICONS.start}>
-                        <Popup>
-                            <div className="p-4 min-w-[200px]">
+                        <Tooltip direction="top" offset={[0, -20]} opacity={1} className="custom-tooltip">
+                            <div className="p-3 min-w-[180px]">
                                 <div className="flex items-center gap-2 mb-1">
-                                    <div className="flex h-7 w-7 items-center justify-center rounded-lg" style={{ background: 'rgba(16,185,129,0.15)' }}>
-                                        <Truck size={14} color="#10b981" />
+                                    <div className="flex h-6 w-6 items-center justify-center rounded-md bg-emerald-500/10">
+                                        <Truck size={14} className="text-emerald-500" />
                                     </div>
-                                    <span className="text-sm font-semibold" style={{ color: isDark ? '#f8fafc' : '#0f172a' }}>Start</span>
+                                    <span className={`text-sm font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>Start Point</span>
                                 </div>
-                                <p className="text-xs" style={{ color: isDark ? '#94a3b8' : '#64748b' }}>{legs[0].from || 'Current Location'}</p>
+                                <p className={`text-xs pl-8 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{legs[0].from || 'Current Location'}</p>
                             </div>
-                        </Popup>
+                        </Tooltip>
                     </Marker>
                 )}
 
@@ -153,7 +153,9 @@ export function RouteMap({ tripResult }) {
                     if (!stop.lat || !stop.lng) return null;
                     return (
                         <Marker key={i} position={[stop.lat, stop.lng]} icon={ICONS[stop.type] || ICONS.stop}>
-                            <Popup><StopPopup stop={stop} isDark={isDark} /></Popup>
+                            <Tooltip direction="top" offset={[0, -20]} opacity={1} className="custom-tooltip">
+                                <StopPopup stop={stop} isDark={isDark} />
+                            </Tooltip>
                         </Marker>
                     );
                 })}
@@ -161,17 +163,17 @@ export function RouteMap({ tripResult }) {
                 {/* End marker (final dropoff) */}
                 {legs.length > 0 && legs[legs.length - 1].geometry.length > 0 && (
                     <Marker position={legs[legs.length - 1].geometry[legs[legs.length - 1].geometry.length - 1]} icon={ICONS.dropoff}>
-                        <Popup>
-                            <div className="p-4 min-w-[200px]">
+                        <Tooltip direction="top" offset={[0, -20]} opacity={1} className="custom-tooltip">
+                            <div className="p-3 min-w-[180px]">
                                 <div className="flex items-center gap-2 mb-1">
-                                    <div className="flex h-7 w-7 items-center justify-center rounded-lg" style={{ background: 'rgba(245,158,11,0.15)' }}>
-                                        <Flag size={14} color="#f59e0b" />
+                                    <div className="flex h-6 w-6 items-center justify-center rounded-md bg-amber-500/10">
+                                        <Flag size={14} className="text-amber-500" />
                                     </div>
-                                    <span className="text-sm font-semibold" style={{ color: isDark ? '#f8fafc' : '#0f172a' }}>Destination</span>
+                                    <span className={`text-sm font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>Destination</span>
                                 </div>
-                                <p className="text-xs" style={{ color: isDark ? '#94a3b8' : '#64748b' }}>{legs[legs.length - 1].to || 'Dropoff Location'}</p>
+                                <p className={`text-xs pl-8 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{legs[legs.length - 1].to || 'Dropoff Location'}</p>
                             </div>
-                        </Popup>
+                        </Tooltip>
                     </Marker>
                 )}
             </MapContainer>

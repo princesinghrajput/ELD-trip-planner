@@ -156,6 +156,7 @@ function LogSheetCanvas({ day, isDark }) {
   const containerRef = useRef(null);
   const canvasRef = useRef(null);
   const [dimensions, setDimensions] = useState({ width: 0, height: 320 });
+  const [hoverInfo, setHoverInfo] = useState(null);
 
   useEffect(() => {
     if (!containerRef.current || typeof ResizeObserver === 'undefined') return;
@@ -197,6 +198,51 @@ function LogSheetCanvas({ day, isDark }) {
     return null;
   }
 
+  const handleMouseMove = (e) => {
+    if (!day || !dimensions.width) return;
+
+    const rect = canvasRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    // Grid config from drawLogGrid
+    const padding = { top: 40, right: 30, bottom: 200, left: 100 };
+    const gridWidth = dimensions.width - padding.left - padding.right;
+
+    // Check if mouse is within grid horizontal bounds
+    if (x < padding.left || x > dimensions.width - padding.right) {
+      setHoverInfo(null);
+      return;
+    }
+
+    // Calculate time from X
+    const minuteWidth = gridWidth / 1440;
+    const minute = (x - padding.left) / minuteWidth;
+    const clampedMinute = Math.max(0, Math.min(1440, minute));
+
+    // Find event at this time
+    const event = day.events?.find(ev =>
+      clampedMinute >= ev.startMinutes && clampedMinute < ev.endMinutes
+    );
+
+    if (event) {
+      setHoverInfo({
+        x: e.clientX, // Screen coords for fixed/absolute tooltip
+        y: e.clientY,
+        canvasX: x,
+        canvasY: y,
+        minute: clampedMinute,
+        event
+      });
+    } else {
+      setHoverInfo(null);
+    }
+  };
+
+  const handleMouseLeave = () => {
+    setHoverInfo(null);
+  };
+
   return (
     <div
       ref={containerRef}
@@ -216,7 +262,50 @@ function LogSheetCanvas({ day, isDark }) {
         </div>
         {day.headline && <span className="text-xs text-slate-500">{day.headline}</span>}
       </div>
-      <canvas ref={canvasRef} role="img" aria-label={`FMCSA log grid for ${day.label}`} />
+      <div className="relative">
+        <canvas
+          ref={canvasRef}
+          role="img"
+          aria-label={`FMCSA log grid for ${day.label}`}
+          onMouseMove={handleMouseMove}
+          onMouseLeave={handleMouseLeave}
+          className="cursor-crosshair w-full"
+        />
+        {hoverInfo && (
+          <div
+            className={cn(
+              "pointer-events-none fixed z-50 rounded-lg border p-3 shadow-xl backdrop-blur-md",
+              isDark ? "bg-slate-900/95 border-slate-700 text-slate-200" : "bg-white/95 border-slate-200 text-slate-700"
+            )}
+            style={{
+              left: hoverInfo.x + 15,
+              top: hoverInfo.y + 15,
+              minWidth: '200px'
+            }}
+          >
+            <div className="flex items-center gap-2 mb-2 pb-2 border-b border-dashed border-slate-500/30">
+              <span className="h-2.5 w-2.5 rounded-full" style={{ background: getStatusColor(hoverInfo.event.statusKey).color }} />
+              <span className="font-bold text-sm">{hoverInfo.event.label}</span>
+            </div>
+            <div className="space-y-1 text-xs">
+              <div className="flex justify-between">
+                <span className="opacity-70">Time:</span>
+                <span className="font-mono">{hoverInfo.event.windowLabel}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="opacity-70">Duration:</span>
+                <span className="font-mono">{formatHours(hoverInfo.event.durationMinutes)}</span>
+              </div>
+              {(hoverInfo.event.location || hoverInfo.event.note) && (
+                <div className="pt-1 mt-1 border-t border-slate-500/10 opacity-90">
+                  {hoverInfo.event.location && <div>📍 {hoverInfo.event.location}</div>}
+                  {hoverInfo.event.note && <div>📝 {hoverInfo.event.note}</div>}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
       <StatusLegend isDark={isDark} />
     </div>
   );
