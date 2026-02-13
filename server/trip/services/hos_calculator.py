@@ -105,17 +105,32 @@ class TripSimulator:
         self._check_cycle(frm, lat, lng)
         self._open_window()
 
-        avail = min(
-            MAX_DRIVING_MINUTES - self.shift_driving,
-            self._window_left(),
-            MAX_DRIVING_BEFORE_BREAK - self.since_break,
-            MAX_CYCLE_MINUTES - self.cycle_used,
-        )
+        # Calculate limits
+        # 1. Driving within shift
+        limit_driving = MAX_DRIVING_MINUTES - self.shift_driving
+        # 2. 14-hour duty window
+        limit_window = self._window_left()
+        # 3. 8-hour consecutive driving limit
+        limit_break = MAX_DRIVING_BEFORE_BREAK - self.since_break
+        # 4. 70-hour / 8-day cycle limit
+        limit_cycle = MAX_CYCLE_MINUTES - self.cycle_used
 
+        # Determine the constraining factor
+        avail = min(limit_driving, limit_window, limit_break, limit_cycle)
+        
+        # If we have no available driving time, perform the required action
         if avail <= 0:
-            self._rest(frm, lat, lng)
+            if limit_cycle <= 0:
+                self._check_cycle(frm, lat, lng) # Force restart if no cycle hours
+            elif limit_driving <= 0 or limit_window <= 0:
+                self._rest(frm, lat, lng) # 10h rest if shift/window/driving limit hit
+            elif limit_break <= 0:
+                self._break(frm, lat, lng) # 30m break if 8h limit hit
+            
+            # Recurse to try driving again after the action
             return self._drive(mins, frm, to, lat, lng)
 
+        # Drive for as much as possible up to 'mins' or 'avail'
         now = min(mins, avail)
         label = f"Driving: {frm} → {to}" if frm and to else "Driving"
         self._event(DRIVING, now, frm, lat, lng, label)
@@ -128,16 +143,8 @@ class TripSimulator:
         if left <= 0:
             return now
 
-        # hit a limit — handle it and keep going
-        if self.since_break >= MAX_DRIVING_BEFORE_BREAK:
-            self._break(frm, lat, lng)
-
-        if self.shift_driving >= MAX_DRIVING_MINUTES or self._window_left() <= 0:
-            self._rest(frm, lat, lng)
-
-        if self.cycle_used >= MAX_CYCLE_MINUTES:
-            self._check_cycle(frm, lat, lng)
-
+        # If we have remaining miles but stopped due to a limit, 
+        # recurse to handle the break/rest and continue driving.
         return now + self._drive(left, frm, to, lat, lng)
 
     # ---- HOS actions ----
