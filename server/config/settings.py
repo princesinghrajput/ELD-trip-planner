@@ -176,7 +176,7 @@ REST_FRAMEWORK = {
 CORS_ALLOW_ALL_ORIGINS = bool_env("CORS_ALLOW_ALL_ORIGINS", "False")
 CORS_ALLOWED_ORIGINS = csv_env(
     "CORS_ALLOWED_ORIGINS",
-    "http://localhost:5173,http://127.0.0.1:5173,https://eld-trip-planner-fpdt.onrender.com",
+    "http://localhost:5173,http://127.0.0.1:5173,https://eld-trip-planner-fpdt.onrender.com,https://eld-trip-planner-gray.vercel.app",
 )
 if not CORS_ALLOW_ALL_ORIGINS and RENDER_EXTERNAL_HOSTNAME:
     render_origin = f"https://{RENDER_EXTERNAL_HOSTNAME}"
