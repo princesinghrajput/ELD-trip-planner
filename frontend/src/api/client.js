@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const client = axios.create({
-    baseURL: '/api', // Proxied by Vite to Django
+    baseURL: import.meta.env.VITE_API_URL || '/api', // Use env var in prod, proxy in dev
     headers: {
         'Content-Type': 'application/json',
     },
