@@ -1,11 +1,12 @@
-services:
+version: '3.8'
 
+services:
   web:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: server-web
-    command: gunicorn --bind 0.0.0.0:8000 config.wsgi:application
+    command: sh -c "python manage.py collectstatic --noinput && python manage.py migrate && gunicorn --bind 0.0.0.0:8000 config.wsgi:application"
     restart: always
     volumes:
       - static_volume:/app/static
@@ -16,17 +17,16 @@ services:
       - .env
 
   nginx:
-    image: nginx:alpine
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
     container_name: server-nginx
     restart: always
     volumes:
-      - ./nginx/conf.d:/etc/nginx/conf.d
       - static_volume:/app/static
       - media_volume:/app/media
-      - /etc/letsencrypt:/etc/letsencrypt:ro
     ports:
       - "80:80"
-      - "443:443"
     depends_on:
       - web
 
