@@ -7,7 +7,6 @@ https://docs.djangoproject.com/en/5.0/topics/settings/
 
 import os
 from pathlib import Path
-import dj_database_url
 
 from dotenv import load_dotenv
 
@@ -27,7 +26,7 @@ SECRET_KEY = os.getenv(
 
 DEBUG = os.getenv("DJANGO_DEBUG", "True").lower() in ("true", "1", "yes")
 
-ALLOWED_HOSTS = os.getenv("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,.pythonanywhere.com").split(",")
+ALLOWED_HOSTS = os.getenv("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
 
 # ---------------------------------------------------------------------------
 # Application definition
@@ -48,7 +47,6 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
-    "whitenoise.middleware.WhiteNoiseMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -81,10 +79,10 @@ WSGI_APPLICATION = "config.wsgi.application"
 # Database
 # ---------------------------------------------------------------------------
 DATABASES = {
-    "default": dj_database_url.config(
-        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
-        conn_max_age=600,
-    )
+    "default": {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": BASE_DIR / "db.sqlite3",
+    }
 }
 
 # ---------------------------------------------------------------------------
@@ -109,8 +107,6 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # ---------------------------------------------------------------------------
 STATIC_URL = "static/"
-STATIC_ROOT = BASE_DIR / "staticfiles"
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 # ---------------------------------------------------------------------------
 # Default primary key field type
