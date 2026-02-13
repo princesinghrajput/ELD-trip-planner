@@ -1,19 +1,17 @@
 """
-Django settings for ELD Trip Planner API.
-
-For more information on this file, see
-https://docs.djangoproject.com/en/5.0/topics/settings/
+Django settings for ELD Trip Planner API (Production Ready - Cloudflare).
 """
 
 import os
 from pathlib import Path
-
 from dotenv import load_dotenv
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
+# ---------------------------------------------------------------------------
+# Paths
+# ---------------------------------------------------------------------------
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Load environment variables from .env file
+# Load .env
 load_dotenv(BASE_DIR / ".env")
 
 # ---------------------------------------------------------------------------
@@ -24,9 +22,33 @@ SECRET_KEY = os.getenv(
     "django-insecure-dev-only-change-me-in-production",
 )
 
-DEBUG = os.getenv("DJANGO_DEBUG", "True").lower() in ("true", "1", "yes")
+DEBUG = False  # IMPORTANT: always False in production
 
-ALLOWED_HOSTS = os.getenv("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
+# Your domain + EC2 IP
+ALLOWED_HOSTS = [
+    "api.planner.princecodes.com",
+    "13.201.45.107",
+    "localhost",
+    "127.0.0.1",
+]
+
+# Cloudflare → tells Django request is actually HTTPS
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+USE_X_FORWARDED_HOST = True
+
+# Required for POST/CSRF via HTTPS
+CSRF_TRUSTED_ORIGINS = [
+    "https://api.planner.princecodes.com",
+]
+
+# Secure cookies (needed for login/auth)
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+
+# Recommended browser protections
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = "SAMEORIGIN"
 
 # ---------------------------------------------------------------------------
 # Application definition
@@ -38,9 +60,11 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+
     # Third-party
     "rest_framework",
     "corsheaders",
+
     # Local
     "trip",
 ]
@@ -76,7 +100,7 @@ TEMPLATES = [
 WSGI_APPLICATION = "config.wsgi.application"
 
 # ---------------------------------------------------------------------------
-# Database
+# Database (SQLite inside Docker container)
 # ---------------------------------------------------------------------------
 DATABASES = {
     "default": {
@@ -104,17 +128,14 @@ USE_I18N = True
 USE_TZ = True
 
 # ---------------------------------------------------------------------------
-# Static files (CSS, JavaScript, Images)
+# Static & Media (served by nginx)
 # ---------------------------------------------------------------------------
-STATIC_URL = "static/"
+STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "static"
 
-MEDIA_URL = "media/"
+MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
-# ---------------------------------------------------------------------------
-# Default primary key field type
-# ---------------------------------------------------------------------------
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # ---------------------------------------------------------------------------
@@ -130,15 +151,14 @@ REST_FRAMEWORK = {
 }
 
 # ---------------------------------------------------------------------------
-# CORS Configuration
+# CORS (for your frontend later)
 # ---------------------------------------------------------------------------
-CORS_ALLOWED_ORIGINS = os.getenv(
-    "CORS_ALLOWED_ORIGINS",
-    "http://localhost:5173,http://127.0.0.1:5173",
-).split(",")
+CORS_ALLOW_ALL_ORIGINS = False
 
-CORS_ALLOW_ALL_ORIGINS = os.getenv("CORS_ALLOW_ALL_ORIGINS", "False").lower() in (
-    "true",
-    "1",
-    "yes",
-)
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "https://planner.princecodes.com",
+]
+
+CORS_ALLOW_CREDENTIALS = True
