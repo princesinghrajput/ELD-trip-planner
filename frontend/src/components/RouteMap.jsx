@@ -89,11 +89,64 @@ export function RouteMap({ tripResult }) {
 
     const { bounds, legs, stops } = useMemo(() => {
         if (!tripResult) return { bounds: null, legs: [], stops: [] };
-        const pts = tripResult.route.legs.flatMap(l => l.geometry);
+
+        // Combine all route geometry points from every leg
+        const allGeometry = tripResult.route.legs.flatMap(l => l.geometry);
+
+        // Snap a point to the closest point on the route polyline
+        const snapToRoute = (lat, lng) => {
+            let minDist = Infinity;
+            let snapped = [lat, lng];
+
+            for (let i = 0; i < allGeometry.length - 1; i++) {
+                const [aLat, aLng] = allGeometry[i];
+                const [bLat, bLng] = allGeometry[i + 1];
+
+                // Project point onto segment A→B, clamp to [0,1]
+                const dx = bLat - aLat, dy = bLng - aLng;
+                const lenSq = dx * dx + dy * dy;
+                let t = lenSq === 0 ? 0 : ((lat - aLat) * dx + (lng - aLng) * dy) / lenSq;
+                t = Math.max(0, Math.min(1, t));
+
+                const pLat = aLat + t * dx;
+                const pLng = aLng + t * dy;
+                const d = (pLat - lat) ** 2 + (pLng - lng) ** 2;
+
+                if (d < minDist) {
+                    minDist = d;
+                    snapped = [pLat, pLng];
+                }
+            }
+            return snapped;
+        };
+
+        // Only show important stops on the map (pickup, dropoff, fuel, rest)
+        // Skip 30-min breaks to avoid cluttering the map
+        const IMPORTANT_TYPES = ['pickup', 'dropoff', 'fuel', 'rest'];
+        const importantStops = (tripResult.stops || []).filter(s => IMPORTANT_TYPES.includes(s.type));
+
+        // Deduplicate stops that are very close together (within ~0.5 deg ≈ 30mi)
+        const dedupedStops = importantStops.reduce((acc, stop) => {
+            const tooClose = acc.find(
+                s => s.type === stop.type &&
+                    Math.abs(s.lat - stop.lat) < 0.5 &&
+                    Math.abs(s.lng - stop.lng) < 0.5
+            );
+            if (!tooClose) acc.push(stop);
+            return acc;
+        }, []);
+
+        // Snap each stop to the route polyline so markers sit on the road
+        const snappedStops = dedupedStops.map(stop => {
+            if (!stop.lat || !stop.lng) return stop;
+            const [sLat, sLng] = snapToRoute(stop.lat, stop.lng);
+            return { ...stop, lat: sLat, lng: sLng };
+        });
+
         return {
-            bounds: pts.length > 0 ? L.latLngBounds(pts) : null,
+            bounds: allGeometry.length > 0 ? L.latLngBounds(allGeometry) : null,
             legs: tripResult.route.legs,
-            stops: tripResult.stops,
+            stops: snappedStops,
         };
     }, [tripResult]);
 

@@ -74,13 +74,24 @@ class TripSimulator:
         lat_to: float = 0,
         lng_to: float = 0,
     ):
+        total_distance = distance_miles
         remaining = distance_miles
         while remaining > 0.5:
             to_fuel = FUEL_STOP_INTERVAL_MILES - self.miles_since_fuel
             chunk_mi = min(remaining, max(to_fuel, 0.5))
             chunk_min = max(1, round((chunk_mi / AVERAGE_SPEED_MPH) * 60))
 
-            driven = self._drive(chunk_min, location_from, location_to, lat_from, lng_from)
+            # Calculate interpolated position based on distance covered so far
+            covered = total_distance - remaining
+            frac = covered / total_distance if total_distance > 0 else 0
+            cur_lat = lat_from + (lat_to - lat_from) * frac
+            cur_lng = lng_from + (lng_to - lng_from) * frac
+
+            driven = self._drive(
+                chunk_min, location_from, location_to,
+                cur_lat, cur_lng, lat_to, lng_to,
+                total_distance, covered,
+            )
 
             actual_mi = (driven / 60) * AVERAGE_SPEED_MPH
             remaining -= actual_mi
@@ -88,7 +99,12 @@ class TripSimulator:
             self.total_miles += actual_mi
 
             if self.miles_since_fuel >= FUEL_STOP_INTERVAL_MILES and remaining > 0.5:
-                self._fuel_stop(location_from, lat_from, lng_from)
+                # Interpolate fuel stop position
+                fuel_covered = total_distance - remaining
+                fuel_frac = fuel_covered / total_distance if total_distance > 0 else 0
+                fuel_lat = lat_from + (lat_to - lat_from) * fuel_frac
+                fuel_lng = lng_from + (lng_to - lng_from) * fuel_frac
+                self._fuel_stop(location_from, fuel_lat, fuel_lng)
 
     def get_timeline(self) -> list[dict]:
         return self.timeline
@@ -98,7 +114,12 @@ class TripSimulator:
 
     # ---- core drive loop (recursive on HOS splits) ----
 
-    def _drive(self, mins: int, frm: str, to: str, lat: float, lng: float) -> int:
+    def _drive(
+        self, mins: int, frm: str, to: str,
+        lat: float, lng: float,
+        lat_to: float = 0, lng_to: float = 0,
+        total_dist: float = 0, covered_dist: float = 0,
+    ) -> int:
         if mins <= 0:
             return 0
 
@@ -123,15 +144,31 @@ class TripSimulator:
             if limit_cycle <= 0:
                 self._check_cycle(frm, lat, lng) # Force restart if no cycle hours
             elif limit_driving <= 0 or limit_window <= 0:
-                self._rest(frm, lat, lng) # 10h rest if shift/window/driving limit hit
+                self._rest(frm, lat, lng) # 10h rest at current interpolated position
             elif limit_break <= 0:
-                self._break(frm, lat, lng) # 30m break if 8h limit hit
+                self._break(frm, lat, lng) # 30m break at current interpolated position
             
             # Recurse to try driving again after the action
-            return self._drive(mins, frm, to, lat, lng)
+            return self._drive(
+                mins, frm, to, lat, lng,
+                lat_to, lng_to, total_dist, covered_dist,
+            )
 
         # Drive for as much as possible up to 'mins' or 'avail'
         now = min(mins, avail)
+
+        # Calculate the position at the end of this driving chunk
+        chunk_mi = (now / 60) * AVERAGE_SPEED_MPH
+        new_covered = covered_dist + chunk_mi
+        if total_dist > 0:
+            end_frac = min(new_covered / total_dist, 1.0)
+            # Use lat_to/lng_to from segment origin to extrapolate
+            # We already have the current interpolated lat/lng as starting pos
+            drive_end_lat = lat + (lat_to - lat) * min(chunk_mi / max(total_dist - covered_dist, 1), 1.0)
+            drive_end_lng = lng + (lng_to - lng) * min(chunk_mi / max(total_dist - covered_dist, 1), 1.0)
+        else:
+            drive_end_lat, drive_end_lng = lat, lng
+
         label = f"Driving: {frm} → {to}" if frm and to else "Driving"
         self._event(DRIVING, now, frm, lat, lng, label)
 
@@ -144,8 +181,12 @@ class TripSimulator:
             return now
 
         # If we have remaining miles but stopped due to a limit, 
-        # recurse to handle the break/rest and continue driving.
-        return now + self._drive(left, frm, to, lat, lng)
+        # recurse to handle the break/rest and continue driving
+        # using the updated position along the route.
+        return now + self._drive(
+            left, frm, to, drive_end_lat, drive_end_lng,
+            lat_to, lng_to, total_dist, new_covered,
+        )
 
     # ---- HOS actions ----
 

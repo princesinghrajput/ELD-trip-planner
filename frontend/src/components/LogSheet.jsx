@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { AlertTriangle, CalendarDays, Clock3, MapPin, Printer } from 'lucide-react';
+import { AlertTriangle, CalendarDays, Clock3, MapPin, Printer, Package, Flag, Fuel, BedDouble, Coffee, Truck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const STATUS_ROWS = [
@@ -392,6 +392,29 @@ function ViolationsList({ violations, isDark }) {
   );
 }
 
+// ── Event type detection helpers ──
+const EVENT_TYPE_CONFIG = {
+  pickup: { icon: Package, label: 'Pickup', color: '#3b82f6', bg: 'bg-blue-500/10', border: 'border-blue-500/20', text: 'text-blue-500' },
+  dropoff: { icon: Flag, label: 'Dropoff', color: '#f59e0b', bg: 'bg-amber-500/10', border: 'border-amber-500/20', text: 'text-amber-500' },
+  fuel: { icon: Fuel, label: 'Fuel Stop', color: '#a855f7', bg: 'bg-purple-500/10', border: 'border-purple-500/20', text: 'text-purple-500' },
+  rest: { icon: BedDouble, label: 'Rest Period', color: '#6366f1', bg: 'bg-indigo-500/10', border: 'border-indigo-500/20', text: 'text-indigo-500' },
+  break: { icon: Coffee, label: 'Break', color: '#06b6d4', bg: 'bg-cyan-500/10', border: 'border-cyan-500/20', text: 'text-cyan-500' },
+  drive: { icon: Truck, label: 'Driving', color: '#10b981', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', text: 'text-emerald-500' },
+  restart: { icon: BedDouble, label: 'Cycle Restart', color: '#8b5cf6', bg: 'bg-violet-500/10', border: 'border-violet-500/20', text: 'text-violet-500' },
+};
+
+function detectEventType(event) {
+  const note = (event.note || '').toLowerCase();
+  if (note.includes('pickup') || note.includes('loading at pickup')) return 'pickup';
+  if (note.includes('dropoff') || note.includes('unloading at dropoff')) return 'dropoff';
+  if (note.includes('fuel')) return 'fuel';
+  if (note.includes('restart') || note.includes('34-hour')) return 'restart';
+  if (note.includes('10-hour') || note.includes('off-duty rest')) return 'rest';
+  if (note.includes('break') || note.includes('30-min')) return 'break';
+  if (event.statusKey === 'driving') return 'drive';
+  return null;
+}
+
 function EventTimeline({ events, isDark }) {
   if (!events?.length) return null;
 
@@ -404,22 +427,71 @@ function EventTimeline({ events, isDark }) {
           isDark ? 'bg-slate-800' : 'bg-slate-200'
         )} />
         <div className="space-y-3">
-          {events.map((event, idx) => (
-            <div key={`${event.status}-${event.startMinutes}-${idx}`} className="relative flex flex-col gap-1 pl-4">
-              <span className="absolute left-[-7px] top-1 h-3 w-3 rounded-full border-2 border-white"
-                style={{ background: getStatusColor(event.statusKey).color, borderColor: isDark ? '#020617' : '#f8fafc' }} />
-              <p className="flex items-center justify-between text-sm font-medium">
-                <span className="capitalize">{event.label}</span>
-                <span className="font-mono text-xs text-slate-500">{event.windowLabel}</span>
-              </p>
-              {(event.location || event.note) && (
-                <p className="text-xs text-slate-500 flex items-center gap-1">
-                  {event.location && <MapPin size={12} />}
-                  <span>{event.location || event.note}</span>
-                </p>
-              )}
-            </div>
-          ))}
+          {events.map((event, idx) => {
+            const evType = detectEventType(event);
+            const config = evType ? EVENT_TYPE_CONFIG[evType] : null;
+            const IconComp = config?.icon || null;
+            const dotColor = config?.color || getStatusColor(event.statusKey).color;
+            const displayLabel = config?.label || event.label;
+
+            return (
+              <div key={`${event.statusKey}-${event.startMinutes}-${idx}`} className="relative flex flex-col gap-1 pl-4">
+                {/* Timeline dot */}
+                <span
+                  className="absolute left-[-7px] top-1.5 h-3.5 w-3.5 rounded-full border-2 flex items-center justify-center"
+                  style={{ background: dotColor, borderColor: isDark ? '#020617' : '#f8fafc' }}
+                />
+
+                {/* Event card for special types */}
+                {config ? (
+                  <div className={cn(
+                    'rounded-lg border px-3 py-2 transition-colors',
+                    config.bg, config.border
+                  )}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        {IconComp && <IconComp size={14} className={config.text} />}
+                        <span className={cn('text-sm font-semibold', config.text)}>{displayLabel}</span>
+                      </div>
+                      <span className={cn('font-mono text-[11px]', isDark ? 'text-slate-400' : 'text-slate-500')}>
+                        {event.windowLabel}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between mt-1">
+                      {event.location && (
+                        <p className={cn('text-xs flex items-center gap-1', isDark ? 'text-slate-400' : 'text-slate-500')}>
+                          <MapPin size={10} />
+                          <span className="truncate max-w-[140px]">{event.location}</span>
+                        </p>
+                      )}
+                      <span className={cn('text-[11px] font-mono', isDark ? 'text-slate-500' : 'text-slate-400')}>
+                        {formatHours(event.durationMinutes)}
+                      </span>
+                    </div>
+                    {event.note && !event.location && (
+                      <p className={cn('text-[11px] mt-1 italic', isDark ? 'text-slate-500' : 'text-slate-400')}>
+                        {event.note}
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  /* Plain event row for generic events */
+                  <>
+                    <p className="flex items-center justify-between text-sm font-medium">
+                      <span className="capitalize">{event.label}</span>
+                      <span className="font-mono text-xs text-slate-500">{event.windowLabel}</span>
+                    </p>
+                    {(event.location || event.note) && (
+                      <p className="text-xs text-slate-500 flex items-center gap-1">
+                        {event.location && <MapPin size={12} />}
+                        <span>{event.location || event.note}</span>
+                      </p>
+                    )}
+                  </>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>
