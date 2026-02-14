@@ -347,17 +347,6 @@ ELD-compliance-simulator/
 
 ---
 
-## 🎬 Video Demo
-
-A 5–8 minute walkthrough demonstrating:
-1. **Location autocomplete** — real Nominatim suggestions
-2. **Cross-country trip** — Atlanta → Dallas → LA (2,215 mi)
-3. **34-hour restart** — cycle exhaustion at 70 hours
-4. **Canvas-rendered logs** — FMCSA grid with hover tooltips
-5. **Code architecture** — HOS simulator, log builder, routing
-
----
-
 ## 👨‍💻 Author
 
 **Prince Singh Rajput**
