@@ -115,11 +115,20 @@ def get_route(
             "geometry": geometry,
         }
 
+
     except requests.RequestException as exc:
-        logger.error("Routing request failed: %s", exc)
-        raise RoutingError(
-            "Routing service error. Please try again later."
-        ) from exc
+        msg = "Routing service error."
+        if exc.response is not None:
+            code = exc.response.status_code
+            if code == 401 or code == 403:
+                msg = "Invalid ORS API Key or unauthorized."
+            elif code == 429:
+                msg = "Routing service quota exceeded."
+            logger.error("Routing request failed (%s): %s", code, exc)
+        else:
+            logger.error("Routing request failed: %s", exc)
+            
+        raise RoutingError(f"{msg} Please try again later.") from exc
 
 
 def decode_polyline(encoded: str) -> list[list[float]]:

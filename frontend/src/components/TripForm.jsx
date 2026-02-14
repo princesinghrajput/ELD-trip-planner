@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useTripPlanner } from "@/hooks/useTripPlanner";
 import { Input } from "@/components/ui/Input";
+import { LocationInput } from "@/components/ui/LocationInput";
 import { Button } from "@/components/ui/Button";
 import { AlertCircle } from "lucide-react";
 import { motion } from "framer-motion";
@@ -72,7 +73,13 @@ export function TripForm({ formData, onFormChange, onSuccess }) {
                         <div className="w-0.5 h-8 bg-gradient-to-b from-emerald-500/40 to-transparent mt-1" />
                     </div>
                     <div className="flex-1">
-                        <Input label="Current Location" value={form.current} onChange={(e) => setForm({ ...form, current: e.target.value })} error={errors.current} disabled={isLoading} />
+                        <LocationInput
+                            label="Current Location"
+                            value={form.current}
+                            onChange={(e) => setForm({ ...form, current: e.target.value })}
+                            error={errors.current}
+                            disabled={isLoading}
+                        />
                     </div>
                 </div>
 
@@ -83,7 +90,13 @@ export function TripForm({ formData, onFormChange, onSuccess }) {
                         <div className="w-0.5 h-8 bg-gradient-to-b from-blue-500/40 to-transparent mt-1" />
                     </div>
                     <div className="flex-1">
-                        <Input label="Pickup Location" value={form.pickup} onChange={(e) => setForm({ ...form, pickup: e.target.value })} error={errors.pickup} disabled={isLoading} />
+                        <LocationInput
+                            label="Pickup Location"
+                            value={form.pickup}
+                            onChange={(e) => setForm({ ...form, pickup: e.target.value })}
+                            error={errors.pickup}
+                            disabled={isLoading}
+                        />
                     </div>
                 </div>
 
@@ -93,7 +106,13 @@ export function TripForm({ formData, onFormChange, onSuccess }) {
                         <div className="h-3 w-3 rounded-full bg-amber-500 ring-4 ring-amber-500/20" />
                     </div>
                     <div className="flex-1">
-                        <Input label="Dropoff Location" value={form.dropoff} onChange={(e) => setForm({ ...form, dropoff: e.target.value })} error={errors.dropoff} disabled={isLoading} />
+                        <LocationInput
+                            label="Dropoff Location"
+                            value={form.dropoff}
+                            onChange={(e) => setForm({ ...form, dropoff: e.target.value })}
+                            error={errors.dropoff}
+                            disabled={isLoading}
+                        />
                     </div>
                 </div>
             </div>

@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Truck, Map as MapIcon, FileText, Route, Clock, Calendar, Gauge, ChevronRight, Sun, Moon } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { Truck, Map as MapIcon, FileText, Route, Clock, Calendar, Gauge, ChevronRight, Sun, Moon, ArrowRight, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TripForm } from '@/components/TripForm';
@@ -10,7 +10,9 @@ import { useTheme } from '@/hooks/useTheme';
 function App() {
   const [activeTab, setActiveTab] = useState('plan');
   const [tripResult, setTripResult] = useState(null);
+  const [logsViewed, setLogsViewed] = useState(false);
   const { isDark, toggle } = useTheme();
+  const ctaRef = useRef(null);
 
   const [tripFormData, setTripFormData] = useState({
     current: "",
@@ -21,7 +23,17 @@ function App() {
 
   const handleTripPlanned = (data) => {
     setTripResult(data);
+    setLogsViewed(false);
     console.log("Trip planned:", data);
+    // Scroll to CTA after a short delay
+    setTimeout(() => {
+      ctaRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 600);
+  };
+
+  const handleViewLogs = () => {
+    setLogsViewed(true);
+    setActiveTab('logs');
   };
 
   return (
@@ -42,7 +54,14 @@ function App() {
         </div>
         <div className="flex gap-1 md:flex-col md:gap-4">
           <NavButton active={activeTab === 'plan'} onClick={() => setActiveTab('plan')} icon={<MapIcon size={20} />} label="Plan" isDark={isDark} />
-          <NavButton active={activeTab === 'logs'} onClick={() => setActiveTab('logs')} icon={<FileText size={20} />} label="Logs" isDark={isDark} />
+          <NavButton
+            active={activeTab === 'logs'}
+            onClick={handleViewLogs}
+            icon={<FileText size={20} />}
+            label="Logs"
+            isDark={isDark}
+            badge={tripResult && !logsViewed}
+          />
         </div>
         <div className="flex gap-2 md:flex-col md:gap-4 md:mb-4">
           {/* Theme Toggle */}
@@ -153,6 +172,61 @@ function App() {
                           </div>
                         </div>
                       )}
+
+                      {/* ── View Driver Logs CTA ── */}
+                      <motion.div
+                        ref={ctaRef}
+                        initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        transition={{ duration: 0.4, delay: 0.5 }}
+                      >
+                        <button
+                          onClick={handleViewLogs}
+                          className={cn(
+                            "group relative w-full overflow-hidden rounded-xl border p-4 text-left transition-all duration-300 hover:scale-[1.02] hover:shadow-lg",
+                            isDark
+                              ? "border-emerald-500/30 bg-gradient-to-r from-emerald-500/10 via-emerald-500/5 to-cyan-500/10 hover:border-emerald-500/50 hover:shadow-emerald-500/10"
+                              : "border-emerald-500/30 bg-gradient-to-r from-emerald-50 via-white to-cyan-50 hover:border-emerald-500/50 hover:shadow-emerald-500/10"
+                          )}
+                        >
+                          {/* Animated shimmer effect */}
+                          <div className="absolute inset-0 -translate-x-full animate-[shimmer_3s_infinite] bg-gradient-to-r from-transparent via-white/5 to-transparent" />
+
+                          <div className="relative flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <div className={cn(
+                                "flex h-10 w-10 items-center justify-center rounded-lg",
+                                isDark ? "bg-emerald-500/20" : "bg-emerald-500/10"
+                              )}>
+                                <FileText size={18} className="text-emerald-500" />
+                              </div>
+                              <div>
+                                <p className={cn("text-sm font-semibold", isDark ? "text-white" : "text-slate-900")}>
+                                  Driver Logs Ready
+                                </p>
+                                <p className={cn("text-xs", isDark ? "text-slate-400" : "text-slate-500")}>
+                                  View your FMCSA-compliant HOS log sheets
+                                </p>
+                              </div>
+                            </div>
+                            <div className={cn(
+                              "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-all duration-300 group-hover:gap-2.5",
+                              isDark
+                                ? "bg-emerald-500/20 text-emerald-400"
+                                : "bg-emerald-500/10 text-emerald-600"
+                            )}>
+                              <Sparkles size={12} />
+                              View Logs
+                              <ArrowRight size={14} className="transition-transform duration-300 group-hover:translate-x-1" />
+                            </div>
+                          </div>
+
+                          {/* Pulse border animation */}
+                          {!logsViewed && (
+                            <div className="absolute inset-0 rounded-xl border-2 border-emerald-500/40 animate-[pulse_2s_ease-in-out_infinite]" />
+                          )}
+                        </button>
+                      </motion.div>
                     </motion.div>
                   ) : (
                     <motion.div
@@ -227,7 +301,7 @@ function StatCard({ icon, label, value, color, isDark }) {
 }
 
 /* ── Nav Button ── */
-function NavButton({ active, onClick, icon, label, isDark }) {
+function NavButton({ active, onClick, icon, label, isDark, badge }) {
   return (
     <button
       onClick={onClick}
@@ -244,6 +318,15 @@ function NavButton({ active, onClick, icon, label, isDark }) {
         <span className="absolute -right-1 top-1 flex h-2 w-2">
           <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
           <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+        </span>
+      )}
+      {/* Notification badge when logs are ready */}
+      {badge && !active && (
+        <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center">
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
+          <span className="relative inline-flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500 text-[8px] font-bold text-white">
+            !
+          </span>
         </span>
       )}
     </button>

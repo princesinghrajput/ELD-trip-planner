@@ -11,6 +11,18 @@ def health_check(request):
     return Response({"status": "ok", "service": "ELD Trip Planner API"})
 
 
+@api_view(["GET"])
+def suggest_view(request):
+    """
+    GET /api/suggest?q=...
+    Returns list of location suggestions.
+    """
+    query = request.query_params.get("q", "")
+    from .services.autocomplete import suggest_locations
+    suggestions = suggest_locations(query)
+    return Response(suggestions)
+
+
 @api_view(["POST"])
 def plan_trip_view(request):
     """

@@ -18,7 +18,8 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'https://eld-trip-planner-fpdt.onrender.com',
+        // target: 'https://eld-trip-planner-fpdt.onrender.com',
+        target: 'http://127.0.0.1:8000',
         changeOrigin: true,
       },
     },

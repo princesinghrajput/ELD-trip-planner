@@ -21,7 +21,7 @@ const Input = forwardRef(({ className, label, error, ...props }, ref) => {
             {label && (
                 <label
                     className={cn(
-                        "absolute left-3 top-[-10px] z-10 px-1 text-xs transition-all",
+                        "pointer-events-none absolute left-3 top-[-10px] z-10 px-1 text-xs transition-all",
                         "bg-[var(--label-bg)] text-[var(--text-muted)]",
                         "peer-placeholder-shown:top-3 peer-placeholder-shown:bg-transparent peer-placeholder-shown:text-sm peer-placeholder-shown:text-[var(--text-muted)]",
                         "peer-focus:top-[-10px] peer-focus:bg-[var(--label-bg)] peer-focus:text-xs peer-focus:text-emerald-500",
