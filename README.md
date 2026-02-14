@@ -342,11 +342,7 @@ ELD-compliance-simulator/
 │   ├── Dockerfile                   # Container config
 │   ├── docker-compose.yml           # Dev orchestration
 │   └── requirements.txt             # Python dependencies
-│
-└── docs/
-    ├── screenshots/                 # App screenshots
-    ├── VIDEO_SCRIPT.md              # Demo video script
-    └── assessment.md                # Original requirements
+
 ```
 
 ---
