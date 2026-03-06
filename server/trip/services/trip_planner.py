@@ -20,22 +20,37 @@ class TripPlannerError(Exception):
     """Pipeline-level error."""
 
 
+def _resolve_coords(location_name: str, coords: tuple) -> tuple[float, float]:
+    """
+    Return (lat, lng) from pre-resolved coords if both are present,
+    otherwise fall back to Nominatim geocoding.
+    """
+    if coords and coords[0] is not None and coords[1] is not None:
+        logger.info("Using pre-resolved coords for '%s': (%.5f, %.5f)", location_name, coords[0], coords[1])
+        return (float(coords[0]), float(coords[1]))
+    logger.info("Geocoding '%s' via Nominatim...", location_name)
+    return geocode_address(location_name)
+
+
 def plan_trip(
     current_location: str,
     pickup_location: str,
     dropoff_location: str,
     cycle_used_hours: float,
+    current_coords: tuple = (None, None),
+    pickup_coords: tuple = (None, None),
+    dropoff_coords: tuple = (None, None),
 ) -> dict:
     """
     Run the full planning pipeline and return everything the frontend needs:
     route geometry, HOS timeline, daily log sheets, and stop markers.
     """
     try:
-        # 1) geocode
+        # 1) geocode (skip if coords already provided by frontend)
         logger.info("Geocoding...")
-        cur = geocode_address(current_location)
-        pick = geocode_address(pickup_location)
-        drop = geocode_address(dropoff_location)
+        cur = _resolve_coords(current_location, current_coords)
+        pick = _resolve_coords(pickup_location, pickup_coords)
+        drop = _resolve_coords(dropoff_location, dropoff_coords)
 
         # 2) route both legs
         logger.info("Routing...")

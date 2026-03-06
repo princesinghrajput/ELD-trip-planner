@@ -17,6 +17,10 @@ export function TripForm({ formData, onFormChange, onSuccess }) {
         pickup: "",
         dropoff: "",
         cycleUsed: "0",
+        // Coordinates from autocomplete (avoids server-side Nominatim geocoding)
+        currentCoords: null,
+        pickupCoords: null,
+        dropoffCoords: null,
     });
 
     const form = formData || localForm;
@@ -76,7 +80,7 @@ export function TripForm({ formData, onFormChange, onSuccess }) {
                         <LocationInput
                             label="Current Location"
                             value={form.current}
-                            onChange={(e) => setForm({ ...form, current: e.target.value })}
+                            onChange={(e) => setForm({ ...form, current: e.target.value, currentCoords: e.coords || form.currentCoords })}
                             error={errors.current}
                             disabled={isLoading}
                         />
@@ -93,7 +97,7 @@ export function TripForm({ formData, onFormChange, onSuccess }) {
                         <LocationInput
                             label="Pickup Location"
                             value={form.pickup}
-                            onChange={(e) => setForm({ ...form, pickup: e.target.value })}
+                            onChange={(e) => setForm({ ...form, pickup: e.target.value, pickupCoords: e.coords || form.pickupCoords })}
                             error={errors.pickup}
                             disabled={isLoading}
                         />
@@ -109,7 +113,7 @@ export function TripForm({ formData, onFormChange, onSuccess }) {
                         <LocationInput
                             label="Dropoff Location"
                             value={form.dropoff}
-                            onChange={(e) => setForm({ ...form, dropoff: e.target.value })}
+                            onChange={(e) => setForm({ ...form, dropoff: e.target.value, dropoffCoords: e.coords || form.dropoffCoords })}
                             error={errors.dropoff}
                             disabled={isLoading}
                         />

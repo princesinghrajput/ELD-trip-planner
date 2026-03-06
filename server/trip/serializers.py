@@ -25,3 +25,12 @@ class TripInputSerializer(serializers.Serializer):
         max_value=69,
         help_text="Hours already used in the current 70-hour/8-day cycle (0-69)",
     )
+    # Optional pre-resolved coordinates from frontend autocomplete.
+    # When provided, the backend skips Nominatim geocoding (which gets
+    # blocked from cloud hosting IPs like Render/AWS).
+    current_lat = serializers.FloatField(required=False, default=None)
+    current_lng = serializers.FloatField(required=False, default=None)
+    pickup_lat = serializers.FloatField(required=False, default=None)
+    pickup_lng = serializers.FloatField(required=False, default=None)
+    dropoff_lat = serializers.FloatField(required=False, default=None)
+    dropoff_lng = serializers.FloatField(required=False, default=None)

@@ -40,6 +40,9 @@ def plan_trip_view(request):
             pickup_location=data["pickup_location"],
             dropoff_location=data["dropoff_location"],
             cycle_used_hours=data["cycle_used_hours"],
+            current_coords=(data.get("current_lat"), data.get("current_lng")),
+            pickup_coords=(data.get("pickup_lat"), data.get("pickup_lng")),
+            dropoff_coords=(data.get("dropoff_lat"), data.get("dropoff_lng")),
         )
         return Response(result)
     except TripPlannerError as exc:

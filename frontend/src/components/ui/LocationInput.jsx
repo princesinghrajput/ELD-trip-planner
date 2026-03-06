@@ -3,7 +3,8 @@ import { Search, MapPin } from "lucide-react";
 import { useTheme } from "@/hooks/useTheme";
 import { Input } from "@/components/ui/Input";
 import { cn } from "@/lib/utils";
-import client from "@/api/client";
+
+const NOMINATIM_SEARCH_URL = "https://nominatim.openstreetmap.org/search";
 
 export function LocationInput({ label, value, onChange, error, disabled }) {
     const { isDark } = useTheme();
@@ -13,6 +14,7 @@ export function LocationInput({ label, value, onChange, error, disabled }) {
     const [isFetching, setIsFetching] = useState(false);
     const wrapperRef = useRef(null);
     const isTypingRef = useRef(false); // only fetch when user is actively typing
+    const abortRef = useRef(null); // to cancel in-flight requests
 
     // Sync from parent only when value changes externally
     useEffect(() => {
@@ -32,7 +34,8 @@ export function LocationInput({ label, value, onChange, error, disabled }) {
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
-    // Debounced fetch suggestions — only when user is actively typing
+    // Debounced fetch suggestions directly from Nominatim (browser → Nominatim)
+    // This avoids Nominatim blocking cloud hosting IPs (Render, AWS, etc.)
     useEffect(() => {
         if (!isTypingRef.current) {
             return;
@@ -45,29 +48,65 @@ export function LocationInput({ label, value, onChange, error, disabled }) {
         }
 
         const timeOutId = setTimeout(async () => {
+            // Cancel any previous in-flight request
+            if (abortRef.current) {
+                abortRef.current.abort();
+            }
+            const controller = new AbortController();
+            abortRef.current = controller;
+
             setIsFetching(true);
             try {
-                const res = await client.get(`/suggest/?q=${encodeURIComponent(query)}`);
-                const data = res.data || [];
+                const params = new URLSearchParams({
+                    q: query,
+                    format: "json",
+                    addressdetails: "1",
+                    limit: "5",
+                    countrycodes: "us,ca,mx",
+                });
+                const res = await fetch(`${NOMINATIM_SEARCH_URL}?${params}`, {
+                    headers: {
+                        "Accept": "application/json",
+                    },
+                    signal: controller.signal,
+                });
+                if (!res.ok) {
+                    throw new Error(`Nominatim responded with ${res.status}`);
+                }
+                const results = await res.json();
+                const data = results.map((r) => ({
+                    label: r.display_name || "",
+                    value: r.display_name || "",
+                    lat: r.lat,
+                    lng: r.lon,
+                }));
                 setSuggestions(data);
                 if (data.length > 0) {
                     setShowSuggestions(true);
                 }
             } catch (err) {
-                console.error("Suggest failed", err);
-                setSuggestions([]);
+                if (err.name !== "AbortError") {
+                    console.error("Suggest failed", err);
+                    setSuggestions([]);
+                }
             } finally {
                 setIsFetching(false);
             }
         }, 400);
 
-        return () => clearTimeout(timeOutId);
+        return () => {
+            clearTimeout(timeOutId);
+            if (abortRef.current) {
+                abortRef.current.abort();
+            }
+        };
     }, [query]);
 
     const handleSelect = (s) => {
         isTypingRef.current = false; // user selected, stop fetching
         setQuery(s.label);
-        onChange({ target: { value: s.label } });
+        // Pass lat/lng along so the backend can skip geocoding
+        onChange({ target: { value: s.label }, coords: { lat: s.lat, lng: s.lng } });
         setSuggestions([]);
         setShowSuggestions(false);
     };
@@ -76,7 +115,8 @@ export function LocationInput({ label, value, onChange, error, disabled }) {
         const val = e.target.value;
         isTypingRef.current = true; // user is typing, allow fetches
         setQuery(val);
-        onChange(e);
+        // Clear coords when user types manually (not from suggestion)
+        onChange({ ...e, coords: null });
         if (!val) {
             setSuggestions([]);
             setShowSuggestions(false);

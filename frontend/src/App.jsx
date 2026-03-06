@@ -19,6 +19,9 @@ function App() {
     pickup: "",
     dropoff: "",
     cycleUsed: "0",
+    currentCoords: null,
+    pickupCoords: null,
+    dropoffCoords: null,
   });
 
   const handleTripPlanned = (data) => {

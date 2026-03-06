@@ -25,3 +25,12 @@ story_requirement.md
 *.agents
 *.agent
 *.codex
+
+# Security - Private keys
+*.pem
+
+# Debug / temp output
+output.json
+verify_*.py
+reproduce_*.py
+verify_*.txt
